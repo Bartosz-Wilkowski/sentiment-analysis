@@ -6,6 +6,7 @@ This module provides a class for handling, analyzing and visualizing data.
 from collections import Counter
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
 from nltk.tokenize import word_tokenize
 
 
@@ -15,6 +16,49 @@ class DataHandler:
 
     This class provides static methods for handling datasets with text columns.
     """
+
+    @staticmethod
+    def clean_text(text):
+        """
+        Cleans input text by removing links.
+        Converts text to lowercase for normalization.
+
+        Parameters:
+        ----------
+        text : str
+            The input text to be cleaned.
+
+        Returns:
+        -------
+        str
+            The cleaned text with links removed and original special characters preserved.
+        """
+        text = re.sub(r"http\S+", "", text)
+        text = re.sub(r"\s+", " ", text)
+        text = text.lower()
+        return text.strip()
+
+    @staticmethod
+    def clean_text_svm(text):
+        """
+        Cleans input text by removing links, special characters, digits, and extra whitespace.
+        Converts text to lowercase for normalization.
+
+        Parameters:
+        ----------
+        text : str
+            The input text to be cleaned.
+
+        Returns:
+        -------
+        str
+            The cleaned text suitable for traditional models like SVM.
+        """
+        text = re.sub(r"http\S+", "", text)
+        text = re.sub(r"[^a-zA-Z\s]", "", text)
+        text = re.sub(r"\s+", " ", text)
+        text = text.lower()
+        return text.strip()
 
     @staticmethod
     def count_tokens(text):
