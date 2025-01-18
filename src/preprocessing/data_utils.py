@@ -47,6 +47,10 @@ class DataUtils:
         if 'Review' not in df.columns:
             raise ValueError("Input DataFrame must contain 'Review' column.")
 
+        # remove rows where 'Review' is NaN or empty
+        df = df.dropna(subset=['Review']).copy()
+        df = df[df['Review'].str.strip() != '']
+
         # initialize NLP tools
         stop_words = set(stopwords.words('english'))
         lemmatizer = WordNetLemmatizer()
@@ -64,13 +68,15 @@ class DataUtils:
 
             # remove stop words and apply lemmatization
             tokens = [lemmatizer.lemmatize(word) for word in tokens if word not in stop_words]
-            processed_reviews.append(" ".join(tokens))
-
-        # remove rows where 'Review' is empty after processing
-        df = df[df['Review'].str.strip().fillna('') != '']
+            processed_text = " ".join(tokens).strip()
+            processed_reviews.append(processed_text if processed_text else None)
 
         # replace the 'Review' column with processed text
         df['Review'] = processed_reviews
+
+        # remove rows where 'Review' is empty after processing
+        df = df.dropna(subset=['Review'])
+        df = df[df['Review'].str.strip() != '']
 
         return df
 
