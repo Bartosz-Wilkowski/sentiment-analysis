@@ -35,6 +35,28 @@ class DataUtils:
         return len(tokens)
 
     @staticmethod
+    def count_reviews_by_polarity(dataset):
+        """
+        Displays the count of reviews for each Polarity value (1 and 0).
+
+        Parameters:
+        ----------
+        dataset : pd.DataFrame
+            The dataset containing the 'Polarity' column.
+
+        Returns:
+        -------
+        None
+        """
+
+        # count reviews by Polarity
+        count_polarity = dataset['Polarity'].value_counts()
+
+        # display counts for Polarity 1 and 0
+        print("Number of reviews with Polarity=1:", count_polarity.get(1, 0))
+        print("Number of reviews with Polarity=0:", count_polarity.get(0, 0))
+
+    @staticmethod
     def display_top_tokens(dataset, column_name, num_tokens=25):
         """
         Displays the most frequently occurring tokens in the specified column of the dataset.
