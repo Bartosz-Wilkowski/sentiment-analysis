@@ -18,8 +18,8 @@ seaborn = "^0.13.2"
 spacy = "^3.8.3"
 tensorflow = "2.10.0"
 tensorflow-io-gcs-filesystem = "^0.31.0"
-textattack = "^0.3.10"
-transformers = "^4.47.1"
+textattack = "<0.3.10"
+transformers = "4.23.1"
 ipykernel = "^6.29.5"
 
 
