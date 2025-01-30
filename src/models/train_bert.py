@@ -1,17 +1,16 @@
-from sklearn.metrics import classification_report
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-from transformers import BertTokenizer, TFBertForSequenceClassification
+from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification
 from sklearn.metrics import classification_report
 from tensorflow.keras.callbacks import EarlyStopping
+
 
 def evaluate_bert(model, test_dataset):
     """
     Evaluates the performance of an BERT model on the test set and prints the results.
 
     Args:
-        model (TFBertForSequenceClassification): The trained BERT model.
+        model (TFDistilBertForSequenceClassification): The trained BERT model.
         test_dataset (tf.data.Dataset): Tokenized test dataset.
     """
     print("\nEvaluating on Test Set...")
@@ -26,7 +25,8 @@ def evaluate_bert(model, test_dataset):
     # generate and print the classification report
     print(classification_report(true_labels, predicted_labels))
 
-def _tokenize(df, model_name, tokenizer, max_length=128, batch_size=16):
+
+def _tokenize(df, model_name, max_length=128, batch_size=16):
     """
     Tokenizes text data from a DataFrame for use with a BERT model.
 
@@ -35,15 +35,15 @@ def _tokenize(df, model_name, tokenizer, max_length=128, batch_size=16):
     the tokenized data into a TensorFlow dataset for training or evaluation.
 
     Args:
-        df (pd.DataFrame): The input DataFrame containing text and labels. 
+        df (pd.DataFrame): The input DataFrame containing text and labels.
                            Expects two columns: 'Review' (text) and 'Polarity' (labels).
-        model_name (str): Name of the pre-trained BERT model to use for tokenization (e.g., 'bert-base-uncased').
+        model_name (str): Name of the pre-trained BERT model to use for tokenization (e.g., 'distilbert-base-uncased').
         tokenizer (BertTokenizer): A pre-trained BERT tokenizer object.
         max_length (int): Maximum length of tokenized sequences (default is 128).
         batch_size (int): Batch size for the TensorFlow dataset (default is 16).
 
     Returns:
-        tf.data.Dataset: A TensorFlow dataset containing tokenized input tensors 
+        tf.data.Dataset: A TensorFlow dataset containing tokenized input tensors
                          ('input_ids' and 'attention_mask') and labels (polarity).
     """
     # remove rows where 'Review' is NaN or empty
@@ -51,28 +51,34 @@ def _tokenize(df, model_name, tokenizer, max_length=128, batch_size=16):
     df = df[df['Review'].str.strip() != '']
 
     # initialize tokenizer
-    tokenizer = BertTokenizer.from_pretrained(model_name)
+    tokenizer = DistilBertTokenizer.from_pretrained(model_name)
 
-    # extract reviews and polarity
-    reviews = df['Review']
-    polarity = df['Polarity']
-    
-    # tokenize the reviews
+    # convert polarity to integers if it's not already
+    if not np.issubdtype(df['Polarity'].dtype, np.integer):
+        try:
+            df['Polarity'] = df['Polarity'].astype(int)
+        except ValueError:
+            raise ValueError("'Polarity' column must contain integer values representing sentiment.")
+
+    # tokenize reviews
     inputs = tokenizer(
-        reviews.tolist(),
+        df['Review'].tolist(),
         max_length=max_length,
         padding=True,
         truncation=True,
         return_tensors='tf'
     )
-    
-    # create a TensorFlow dataset
+
+    # convert polarity labels to TensorFlow tensor
+    labels = tf.convert_to_tensor(df['Polarity'].values, dtype=tf.int32)
+
     return tf.data.Dataset.from_tensor_slices(({
         'input_ids': inputs['input_ids'],
         'attention_mask': inputs['attention_mask']
-    }, polarity)).batch(batch_size)
+    }, labels)).batch(batch_size)
 
-def fine_tune_bert(train_df=train_df, val_df=val_df, model_name='bert-base-uncased', epochs=4, max_length=128, batch_size=16, learning_rate=2e-5):
+
+def fine_tune_bert(train_df, val_df, model_name='bert-base-uncased', epochs=4, max_length=128, batch_size=16, learning_rate=2e-5):
     """
     Fine-tunes a BERT model on a given training and validation dataset for a binary classification task.
 
@@ -85,7 +91,7 @@ def fine_tune_bert(train_df=train_df, val_df=val_df, model_name='bert-base-uncas
         6. Evaluate the model on the validation dataset and display a classification report.
 
     Args:
-        train_df (pd.DataFrame): The training dataset containing text and labels. 
+        train_df (pd.DataFrame): The training dataset containing text and labels.
                                  Assumes two columns: 'Review' (text) and 'Polarity' (labels).
         val_df (pd.DataFrame): The validation dataset containing text and labels.
                                Assumes two columns: 'Review' (text) and 'Polarity' (labels).
@@ -97,31 +103,32 @@ def fine_tune_bert(train_df=train_df, val_df=val_df, model_name='bert-base-uncas
 
     Returns:
         tuple: A tuple containing:
-            - model (TFBertForSequenceClassification): The fine-tuned BERT model.
+            - model (TFDistilBertForSequenceClassification): The fine-tuned BERT model.
             - history (History): The training history object containing metrics for each epoch.
     """
 
     # preprocess datasets
     train_dataset = _tokenize(
-        df=train_df, 
+        df=train_df,
         model_name=model_name,
         max_length=max_length,
         batch_size=batch_size
     )
 
     val_dataset = _tokenize(
-        df=val_df, 
+        df=val_df,
         model_name=model_name,
         max_length=max_length,
         batch_size=batch_size
     )
-    
+
     # initialize tokenizer and model
-    model = TFBertForSequenceClassification.from_pretrained(model_name, num_labels=2)
+    model = TFDistilBertForSequenceClassification.from_pretrained(model_name, num_labels=2)
 
     # compile the model
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-    model.compile(optimizer=optimizer, loss=model.compute_loss, metrics=['accuracy'])
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     # define callbacks
     early_stopping = EarlyStopping(
