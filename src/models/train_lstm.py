@@ -1,16 +1,15 @@
 import numpy as np
-import pandas as pd
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout, Bidirectional
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from tensorflow.keras.callbacks import EarlyStopping
 from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
+import os
 
 
-def _preprocess_data(df, max_length=128, vocab_size=10000, stop_words=None):
+def _preprocess_data(df, max_length=128, vocab_size=10000, stop_words=False):
     """
     Preprocesses text data for training a LSTM model.
 
@@ -19,7 +18,7 @@ def _preprocess_data(df, max_length=128, vocab_size=10000, stop_words=None):
     - Applies lemmatization to normalize words.
     - Tokenizes the text and converts it into sequences of integers.
     - Pads the sequences to ensure uniform input length.
-    
+
     Args:
         df (pd.DataFrame): DataFrame containing at least two columns: 'Review' (text data) and 'Polarity' (labels).
         max_length (int, optional): Maximum length of tokenized sequences. Defaults to 128.
@@ -48,7 +47,7 @@ def _preprocess_data(df, max_length=128, vocab_size=10000, stop_words=None):
         if isinstance(stop_words, bool) and stop_words:
             stop_words = set(stopwords.words('english'))
         texts = [" ".join([lemmatizer.lemmatize(word) for word in text.split() if word.lower() not in stop_words]) for text in texts]
-        
+
         # remove empty entries after stopwords removal
         filtered_data = [(text, label) for text, label in zip(texts, labels) if text.strip()]
         texts, labels = zip(*filtered_data) if filtered_data else ([], [])
@@ -63,12 +62,12 @@ def _preprocess_data(df, max_length=128, vocab_size=10000, stop_words=None):
     return padded_sequences, np.array(labels), tokenizer
 
 
-def _tokenize_with_existing_tokenizer(df, tokenizer, max_length):
+def _tokenize_with_existing_tokenizer(df, tokenizer, max_length, stop_words=False):
     """
     Tokenizes and pads text data using an existing tokenizer.
 
-    This function takes a DataFrame containing text data and uses a pre-trained Keras Tokenizer 
-    to convert the text into numerical sequences. The sequences are then padded to a fixed length 
+    This function takes a DataFrame containing text data and uses a pre-trained Keras Tokenizer
+    to convert the text into numerical sequences. The sequences are then padded to a fixed length
     to ensure uniform input size.
 
     Args:
@@ -85,23 +84,22 @@ def _tokenize_with_existing_tokenizer(df, tokenizer, max_length):
     """
     texts = df['Review'].astype(str).tolist()
     labels = df['Polarity'].values
-    
+
     if stop_words:
         if isinstance(stop_words, bool) and stop_words:
             stop_words = set(stopwords.words('english'))
         texts = [" ".join([word for word in text.split() if word.lower() not in stop_words]) for text in texts]
-        
-        # remove empty entries after stopwords removal
+
         filtered_data = [(text, label) for text, label in zip(texts, labels) if text.strip()]
         texts, labels = zip(*filtered_data) if filtered_data else ([], [])
-    
+
     sequences = tokenizer.texts_to_sequences(texts)
     padded_sequences = pad_sequences(sequences, maxlen=max_length, padding='post', truncating='post')
-    
+
     return padded_sequences, np.array(labels)
 
 
-def train_lstm_model_and_tokenizer(train_df, val_df, model, learning_rate=0.001, epochs=10, batch_size=32, max_length=128, vocab_size=10000):
+def train_lstm_model_and_tokenizer(train_df, val_df, model, learning_rate=0.001, epochs=10, batch_size=32, max_length=128, vocab_size=10000, stop_words=False):
     """
     Trains an LSTM model on a given dataset and returns the trained model, training history, and tokenizer.
 
@@ -134,7 +132,7 @@ def train_lstm_model_and_tokenizer(train_df, val_df, model, learning_rate=0.001,
     X_train, y_train, tokenizer = _preprocess_data(train_df, max_length=max_length, vocab_size=vocab_size)
 
     # preprocess validation data
-    X_val, y_val = _tokenize_with_existing_tokenizer(val_df, tokenizer=tokenizer, max_length=max_length)
+    X_val, y_val = _tokenize_with_existing_tokenizer(val_df, tokenizer=tokenizer, max_length=max_length, stop_words=stop_words)
 
     # build the model
     model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=learning_rate),
@@ -165,12 +163,12 @@ def train_lstm_model_and_tokenizer(train_df, val_df, model, learning_rate=0.001,
     return model, history, tokenizer
 
 
-def evaluate_model(model, tokenizer, test_df, max_length=128):
+def evaluate_model(model, tokenizer, test_df, max_length=128, stop_words=False):
     """
     Evaluates a trained LSTM model on a test dataset and prints a classification report.
 
     This function tokenizes and pads the text data from the test dataset using a pre-trained tokenizer,
-    makes predictions using the trained LSTM model, and generates a classification report showing the 
+    makes predictions using the trained LSTM model, and generates a classification report showing the
     model's performance.
 
     Args:
@@ -183,7 +181,7 @@ def evaluate_model(model, tokenizer, test_df, max_length=128):
     Returns:
         None: The function prints the classification report but does not return any values.
     """
-    X_test, y_test = _tokenize_with_existing_tokenizer(df=test_df, tokenizer=tokenizer, max_length=max_length)   
+    X_test, y_test = _tokenize_with_existing_tokenizer(test_df, tokenizer, max_length, stop_words)
     y_pred = (model.predict(X_test) > 0.5).astype(int).flatten()
 
     print("\nClassification Report for Test Set:\n")
