@@ -1,7 +1,20 @@
 """
-Module: data_utils
-This module provides a class for preprocessing, analyzing and visualizing data.
+Data Preprocessing and Visualization Module
+
+This module provides utility functions for processing, analyzing, and visualizing text datasets.
+
+Functions:
+    - count_tokens(text): Counts tokens in a given text.
+    - count_reviews_by_polarity(dataset): Displays the count of reviews per polarity.
+    - display_top_tokens(dataset, column_name, num_tokens=25): Shows the most frequent tokens.
+    - plot_token_distribution(dataset, dataset_name, column_name='Review', bins=30): Plots token count distribution.
+    - plot_polarity_distribution(dataset, dataset_name): Plots review polarity distribution.
+    - plot_polarity_distribution_with_labels(dataset, dataset_name): Plots polarity distribution with labels.
+
+Dependencies:
+    - collections, pandas, nltk, matplotlib
 """
+
 
 from collections import Counter
 import matplotlib.pyplot as plt
@@ -150,9 +163,9 @@ class DataUtils:
         # plot the histogram
         plt.figure(figsize=(10, 6))
         plt.hist(dataset_copy['Token_Count'], bins=bins)
-        plt.title(f'Rozkład liczby tokenów w zbiorze {dataset_name}')
-        plt.xlabel('Liczba tokenów')
-        plt.ylabel('Liczba tekstów')
+        plt.title(f'Distribution of Token Counts in the {dataset_name}')
+        plt.xlabel('Number of Tokens')
+        plt.ylabel('Number of Reviews')
         plt.show()
 
     @staticmethod
@@ -180,9 +193,9 @@ class DataUtils:
         # create the bar chart
         plt.figure(figsize=(10, 6))
         plt.bar(grouped_data['Polarity'], grouped_data['Number of Reviews'])
-        plt.title(f'Rozkład ocen w zbiorze {dataset_name}')
-        plt.xlabel('Liczba tekstów')
-        plt.ylabel('Ocena')
+        plt.title(f'Polarity Distribution in the {dataset_name}')
+        plt.xlabel('Polarity')
+        plt.ylabel('Number of Reviews')
         plt.show()
 
     @staticmethod
@@ -214,7 +227,7 @@ class DataUtils:
             plt.text(bar.get_x() + bar.get_width() / 2, bar.get_height(), str(count), ha='center', va='bottom', fontsize=12)
 
         # configure the chart
-        plt.title(f'Rozkład ocen w zbiorze {dataset_name}')
-        plt.xlabel('Ocena')
-        plt.ylabel('Liczba tekstów')
+        plt.title(f'Polarity Distribution in the {dataset_name}')
+        plt.xlabel('Polarity')
+        plt.ylabel('Number of Reviews')
         plt.show()

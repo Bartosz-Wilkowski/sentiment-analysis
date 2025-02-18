@@ -1,3 +1,24 @@
+"""
+SVM Model Utilities for Sentiment Analysis
+
+This module provides functions for training, evaluating, and saving an SVM model with TF-IDF vectorization.
+
+Functions:
+    - check_svm_model_cv(train_df, test_df, kernel='linear', C=1.0, max_features=5000, ngram_range=(1, 2)):
+      Performs 5-fold cross-validation on an SVM model.
+
+    - evaluate_svm(model, X_test, y_test):
+      Computes and prints accuracy, precision, recall, and F1-score.
+
+    - save_svm_model_and_vectorizer(model, vectorizer, output_path, name):
+      Saves the trained model and vectorizer.
+
+    - save_classification_report(y_test, y_pred, output_path, name):
+      Saves the classification report.
+
+Dependencies:
+    - numpy, pandas, sklearn, joblib, os
+"""
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import SVC

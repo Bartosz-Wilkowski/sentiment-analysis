@@ -1,3 +1,28 @@
+"""
+LSTM Model Training and Evaluation Module
+
+This module provides functions for preprocessing, training, evaluating, and saving an LSTM model for sentiment analysis.
+
+Functions:
+    - _preprocess_data(df, max_length=128, vocab_size=10000, stop_words=False):
+      Tokenizes and pads text data for model training.
+
+    - _tokenize_with_existing_tokenizer(df, tokenizer, max_length, stop_words=False):
+      Tokenizes and pads text using a pre-trained tokenizer.
+
+    - train_lstm_model_and_tokenizer(train_df, val_df, model, learning_rate=0.001, epochs=10, batch_size=32, max_length=128, vocab_size=10000, stop_words=False):
+      Trains an LSTM model and returns the trained model, history, and tokenizer.
+
+    - evaluate_model(model, tokenizer, test_df, max_length=128, stop_words=False):
+      Evaluates the trained model and prints a classification report.
+
+    - save_classification_report(y_test, y_pred, output_path, name):
+      Saves the classification report to a file.
+
+Dependencies:
+    - numpy, tensorflow, nltk, sklearn, pandas, os
+"""
+
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.preprocessing.text import Tokenizer

@@ -1,3 +1,22 @@
+"""
+BERT Model Fine-Tuning and Evaluation Module
+
+This module provides functions for tokenizing, fine-tuning, and evaluating a BERT-based model for sentiment classification.
+
+Functions:
+    - _tokenize(df, model_name, max_length=128, batch_size=16):
+      Tokenizes and prepares text data for BERT model training or evaluation.
+
+    - fine_tune_bert(train_df, val_df, model_name='bert-base-uncased', epochs=4, max_length=128, batch_size=16, learning_rate=2e-5):
+      Fine-tunes a BERT model on given datasets and returns the trained model and history.
+
+    - evaluate_bert(model, test_dataset):
+      Evaluates the trained BERT model on a test dataset and prints a classification report.
+
+Dependencies:
+    - numpy, tensorflow, transformers, sklearn
+"""
+
 import numpy as np
 import tensorflow as tf
 from transformers import DistilBertTokenizer, TFDistilBertForSequenceClassification
